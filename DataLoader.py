@@ -13,14 +13,14 @@ class DataLoader:
         self.expMeta = expMeta
         self.datapath = self.expMeta.experimentPath
 
-    def load_behavioral_data(self, sids, trial_types):
+    def load_behavioral_data(self):
         bdata_path = self.datapath + '/ball/'
 
         files = []
-        for sidIdx in self.expMeta.sids:
+        for sidIdx in self.expMeta.sid:
             files = files + glob.glob( bdata_path + '/*_sid_' + str(sidIdx) + '_*.mat' )
 
-        trial_type_cnt = len(self.expMeta.trial_types)
+        trial_type_cnt = len(self.expMeta.trialTypes)
 
         trial_data = []
         for i in range(trial_type_cnt):
@@ -78,7 +78,7 @@ class DataLoader:
     def load_calcium_imaging_data(self):
         cdata_path = self.datapath + '/2p/'
 
-        trial_type_cnt = len(self.expMeta.trial_types)
+        trial_type_cnt = len(self.expMeta.trialTypes)
 
         trial_data = []
         for tt in range(trial_type_cnt):
@@ -86,8 +86,8 @@ class DataLoader:
 
         for tt in range(trial_type_cnt):
             files = []
-            for sidIdx in self.expMeta.sids:
-                files = files + glob.glob( cdata_path + '/*' + self.expMeta.trial_types[ tt ] + '_' + str(sidIdx) + '_*.tif' )
+            for sidIdx in self.expMeta.sid:
+                files = files + glob.glob( cdata_path + '/*' + self.expMeta.trialTypes[ tt ] + '_' + str(sidIdx) + '_*.tif' )
 
             for filepath in files:
                 filename = ospath.basename( filepath )

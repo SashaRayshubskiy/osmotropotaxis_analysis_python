@@ -1,43 +1,42 @@
-__author__ = 'sasha'
-
 import ExperimentMetadata
 import DataLoader
 
-def load_data( exp_mdata ):
-    loader = DataLoader.DataLoader( exp_mdata )
+class osmotropotaxis_main:
+    def __init__(self):
+        #  Initialize parameters that change with each experiment
+        basepath = '/Users/sasha/Documents/Wilson lab/Data/trackball/'
+        fly_datapath = basepath + 'fly_health_94/'
+        sid = [ 0 ]
+        ##############################################################
 
-    # Returns a list of lists, { trial_type, list of fly running trajectories, sorted by trial ordinal }
-    bdata = loader.load_behavioral_data()
+        self.exp_mdata = ExperimentMetadata.ExperimentMetadata(experimentPath=fly_datapath, sid=sid)
 
-    # Load calcium imaging data
-    cdata = loader.load_calcium_imaging_data()
+    def load_data( self ):
+        loader = DataLoader.DataLoader( self.exp_mdata )
 
-    # Check that the behavioral and imaging data line up correctly
-    img_cnt = len(cdata)
-    run_cnt = len(bdata)
-    assert(img_cnt == run_cnt)
+        # Returns a list of lists, { trial_type, list of fly running trajectories, sorted by trial ordinal }
+        bdata = loader.load_behavioral_data()
 
-    for tt in range(img_cnt):
-        cdata_tt_cnt = len(cdata[tt])
-        bdata_tt_cnt = len(bdata[tt])
-        assert(cdata_tt_cnt == bdata_tt_cnt)
+        # Load calcium imaging data
+        cdata = loader.load_calcium_imaging_data()
 
-        # ATTENTION ATTENTION ATTENTION
-        # Add the code here that compares the behavioral trial id with imaging trial id.
-        # Behavioral tracking code will send a unique trial id to the imaging code.
+        # Check that the behavioral and imaging data line up correctly
+        img_cnt = len(cdata)
+        run_cnt = len(bdata)
+        assert(img_cnt == run_cnt)
 
-    return ( bdata, cdata )
+        for tt in range(img_cnt):
+            cdata_tt_cnt = len(cdata[tt])
+            bdata_tt_cnt = len(bdata[tt])
+            assert(cdata_tt_cnt == bdata_tt_cnt)
 
-if __name__ == "__main__":
+            # ATTENTION ATTENTION ATTENTION
+            # Add the code here that compares the behavioral trial id with imaging trial id.
+            # Behavioral tracking code will send a unique trial id to the imaging code.
 
-    #  Initialize parameters that change with each experiment
-    basepath = '/Users/sasha/Documents/Wilson lab/Data/trackball/'
-    fly_datapath = basepath + 'fly_health_94/'
-    sid = [ 0 ]
-    ##############################################################
+        return ( bdata, cdata )
 
-    exp_mdata = ExperimentMetadata.ExperimentMetadata(experimentPath=fly_datapath, sid=sid)
-
-    # Load in behavioral and calcium imaging data
-    bdata, cdata = load_data( exp_mdata )
+    def run(self):
+        # Load in behavioral and calcium imaging data
+        self.bdata, self.cdata = self.load_data()
 
