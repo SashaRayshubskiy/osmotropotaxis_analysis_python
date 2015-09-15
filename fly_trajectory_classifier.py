@@ -73,8 +73,9 @@ class fly_trajectory_classifier:
                 vel_x = dx[1:] / t_diff
                 vel_y = dy[1:] / t_diff
 
-
-                if trialTypeIdx == 1 and trialIdx == 2:
+                print 'Processing run: { ' + str(trialTypeIdx) + ' , ' + str(trialIdx) + ' }'
+                if trialTypeIdx == 2 and trialIdx == 157:
+                    print 'Got here'
                     plt.figure()
                     # Plot the trajectory for this trial
                     plt.plot(t_z[1:], vel_x)
