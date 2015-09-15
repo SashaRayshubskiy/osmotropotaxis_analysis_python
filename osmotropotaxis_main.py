@@ -1,5 +1,6 @@
 import ExperimentMetadata
 import DataLoader
+import fly_trajectory_classifier as ftc
 
 class osmotropotaxis_main:
     def __init__(self):
