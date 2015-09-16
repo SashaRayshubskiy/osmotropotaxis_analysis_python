@@ -5,12 +5,16 @@ import osmotropotaxis_main
 d = osmotropotaxis_main.osmotropotaxis_main()
 d.run()
 
+
+
 # run test case 1
 import osmotropotaxis_test
 dd = osmotropotaxis_test.osmotropotaxis_test()
-dd.run(d.bdata, d.exp_mdata)
+dd.run(d.loader, d.exp_mdata)
 
 
+
+##
 import matplotlib.pylab as plt
 import numpy as np
 

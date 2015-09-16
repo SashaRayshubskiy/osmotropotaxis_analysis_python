@@ -7,11 +7,14 @@ import scipy.io as sio
 import skimage.io as skio
 import time
 import ExperimentMetadata
+import TrialData
 
 class DataLoader:
     def __init__(self, expMeta):
         self.expMeta = expMeta
         self.datapath = self.expMeta.experimentPath
+
+        self.trial_data_all = None
 
     def load_behavioral_data(self):
         bdata_path = self.datapath + '/ball/'
@@ -22,9 +25,9 @@ class DataLoader:
 
         trial_type_cnt = len(self.expMeta.trialTypes)
 
-        trial_data = []
+        self.trial_data_all = []
         for i in range(trial_type_cnt):
-            trial_data.append([])
+            self.trial_data_all.append([])
 
         for filepath in files:
             filename = ospath.basename( filepath )
@@ -41,22 +44,7 @@ class DataLoader:
 
             trial_date_time = fs[0] + '_' + fs[1] + '_' + fs[2]
 
-            trial_type_idx = -1
-
-            if trial_type == 'Both_Odor':
-                trial_type_idx = 0
-            elif trial_type == 'Left_Odor':
-                trial_type_idx = 1
-            elif trial_type == 'Right_Odor':
-                trial_type_idx = 2
-            elif trial_type == 'Both_Air':
-                trial_type_idx = 3
-            elif trial_type == 'Left_Air':
-                trial_type_idx = 4
-            elif trial_type == 'Right_Air':
-                trial_type_idx = 5
-            else:
-                print 'ERROR: Trial type: ' + trial_type + ' not matched.'
+            trial_type_idx = TrialData.TrialData.getTrialIndexForName(trial_type)
 
             print 'Trial filename: ' + filename
             print 'Trial id: ' + trial_id
@@ -68,27 +56,29 @@ class DataLoader:
             if len(ddd['t'][0]) <= 1:
                 continue
 
-            trial_data[ trial_type_idx ].append( ( (int(trial_sid), int(trial_ord)), time.strptime( trial_date_time, '%Y_%m%d_%I%M%S'), ddd ) )
+            t = ddd['t'].reshape(ddd['t'].shape[1],)
+            dx = ddd['dx'].reshape(ddd['dx'].shape[1],)
+            dy = ddd['dy'].reshape(ddd['dy'].shape[1],)
 
-        for trial_list in trial_data:
+            # This defines the format of the behavioral data in this analysis package.
+            # NOTE: This format only changes here!
+            trial_data = TrialData.TrialData( trial_sid, int(trial_ord), time.strptime( trial_date_time, '%Y_%m%d_%I%M%S'), t, dx, dy )
+            self.trial_data_all[ trial_type_idx ].append( trial_data )
+
+        for trial_list in self.trial_data_all:
             trial_list.sort()
-
-        return ( trial_data )
 
     def load_calcium_imaging_data(self):
         cdata_path = self.datapath + '/2p/'
 
         trial_type_cnt = len(self.expMeta.trialTypes)
 
-        trial_data = []
-        for tt in range(trial_type_cnt):
-            trial_data.append([])
-
         for tt in range(trial_type_cnt):
             files = []
             for sidIdx in self.expMeta.sid:
                 files = files + glob.glob( cdata_path + '/*' + self.expMeta.trialTypes[ tt ] + '_' + str(sidIdx) + '_*.tif' )
 
+            cur_data_list = []
             for filepath in files:
                 filename = ospath.basename( filepath )
                 fs = filename.split('.')
@@ -102,9 +92,13 @@ class DataLoader:
                 # Convert to np array
                 cur_data = next(iter(im_collection))
                 cur_data = np.transpose(cur_data, (2,0,1))
-                trial_data[ tt ].append( ((trial_sid, trial_idx), cur_data) )
+                cur_data_list.append( ((trial_sid, trial_idx), cur_data) )
                 print 'Loaded file: ' + filename
 
-            trial_data[ tt ].sort()
+            cur_data_list.sort()
 
-        return trial_data
+            cur_data_list_len = len(cur_data_list)
+            i = 0
+            while i<cur_data_list_len:
+                self.trial_data_all[tt][i].cdata = cur_data_list[i][1]
+                i = i + 1
