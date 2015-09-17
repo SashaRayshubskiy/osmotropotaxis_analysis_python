@@ -4,6 +4,10 @@ import fly_trajectory_utils
 import numpy as np
 import math
 import matplotlib.pylab as plt
+import matplotlib.patches as patches
+import TrialData
+
+from sklearn.cluster import KMeans
 
 class fly_trajectory_classifier:
     def __init__(self, exp_meta):
@@ -143,48 +147,126 @@ class fly_trajectory_classifier:
 
             trialTypeIdx = trialTypeIdx + 1
 
-
-    # This is the port from Matlab's classification code
-    def classify(self, trial_data_all):
-
+    def prime(self, trial_data_all):
         self.rotate( trial_data_all )
         self.calculate_velocity( trial_data_all )
+        self.bdata_griddy = self.griddify( trial_data_all )
 
-        bdata_griddy = self.griddify( trial_data_all )
+    def plot_avg_velocity_response(self):
 
-        plt.figure()
-        
-        for trialTypeIdx, cur_trial_type_bdata in enumerate( bdata_griddy ):
+        fig = plt.figure(figsize=(14, 6.7), dpi=100, facecolor='w', edgecolor='k')
 
-            # { trial, time point, [t,dx,dy] }
-            # Time points that are not occupied get assigned [t, 0, 0]
-            # cur_trial_type_grid_data = np.empty( (len(cur_trial_type_bdata), time_grid.shape[0], 5) )
+        leftTrialIdx = TrialData.TrialData.getTrialIndexForName('Left_Odor')
+        rightTrialIdx = TrialData.TrialData.getTrialIndexForName('Right_Odor')
 
-            plt.subplot(1,len(bdata_griddy),trialTypeIdx)
+        ax1 = fig.add_subplot(1,2,1)
+        mean_of_trials_fwd_left = np.mean(self.bdata_griddy[leftTrialIdx][:,:,self.VEL_Y],0)
+        mean_of_trials_fwd_right = np.mean(self.bdata_griddy[rightTrialIdx][:,:,self.VEL_Y],0)
+        ax1.plot( self.time_grid, mean_of_trials_fwd_left, color='r', label='Left Odor' )
+        ax1.plot( self.time_grid, mean_of_trials_fwd_right, color='b', label='Right Odor' )
+        ax1.set_xlabel('Time (s)')
+        ax1.set_ylabel('Fwd vel (au/s)')
+        ax1.set_title( 'Avg fwd vel all trials' )
+        ax1.set_xlim((0, 6.5))
+        ylim = (-400, 2000)
+        ax1.set_ylim(ylim)
+        plt.legend(frameon=False)
+        ax1.grid()
 
-            print 'cur_trial_type_bdata.shape= ' + str(cur_trial_type_bdata.shape)
+        p = patches.Rectangle((self.exp_meta.preStimTime,ylim[0]), self.exp_meta.stimTime, \
+                                ylim[1]-ylim[0], linewidth=0, color='wheat' )
+        ax1.add_patch(p)
 
-            mean_of_trials = np.mean(cur_trial_type_bdata[:,:,self.VEL_X],0)
+        ax1 = fig.add_subplot(1,2,2)
+        mean_of_trials_lat_left = np.mean(self.bdata_griddy[leftTrialIdx][:,:,self.VEL_X],0)
+        mean_of_trials_lat_right = np.mean(self.bdata_griddy[rightTrialIdx][:,:,self.VEL_X],0)
+        ax1.plot( self.time_grid, mean_of_trials_lat_left, color='r', label='Left Odor' )
+        ax1.plot( self.time_grid, mean_of_trials_lat_right, color='b', label='Right Odor' )
+        ax1.set_xlabel('Time (s)')
+        ax1.set_ylabel('Lateral vel (au/s)')
+        ax1.set_title( 'Avg lat vel all trials ' )
+        ax1.set_xlim((0, 6.5))
+        ylim = (-400, 800)
+        ax1.set_ylim(ylim)
+        ax1.grid()
 
-            plt.plot(self.time_grid, mean_of_trials )
-            plt.xlabel('Time (s)')
-            plt.ylabel('Lateral vel (au/s)')
-            plt.title( 'Avg lat vel all trials: ' + self.exp_meta.trialTypes[ trialTypeIdx ] )
+        p = patches.Rectangle((self.exp_meta.preStimTime,ylim[0]), self.exp_meta.stimTime, \
+                                ylim[1]-ylim[0], linewidth=0, color='wheat')
+        ax1.add_patch(p)
+
+        plt.legend(frameon=False)
+
+        plt.show()
+        filepath = self.exp_meta.analysisPath + '/test_file'
+        plt.savefig(filepath+'.png', bbox_inches='tight')
+        plt.savefig(filepath+'.pdf', bbox_inches='tight')
+        plt.savefig(filepath+'.eps', bbox_inches='tight', format='eps', dpi=1000)
+
+    def classify(self, trial_data_all):
+        self.classify_kmeans( trial_data_all )
+
+    def classify_kmeans(self, trial_data_all):
+
+        N_CLUSTERS = 3
+
+        BEGIN_TIME = 0
+        END_TIME = 6.5
+
+        BEGIN_TIME_FRAME = BEGIN_TIME*self.TIME_GRID_SPACING
+        END_TIME_FRAME = END_TIME*self.TIME_GRID_SPACING
+
+        trialT = ['Left_Odor', 'Right_Odor']
+        fig = plt.figure(figsize=(14, 6.7), dpi=100, facecolor='w', edgecolor='k')
+
+        for trialTypeIdx, trialType in enumerate(trialT):
+
+
+            # Trying kmeans
+            myTrialIdx = TrialData.TrialData.getTrialIndexForName(trialType)
+            data = self.bdata_griddy[myTrialIdx][:,BEGIN_TIME_FRAME:END_TIME_FRAME,self.VEL_X]
+
+            kmeans = KMeans(n_clusters=N_CLUSTERS)
+            kmeans.fit(data)
+            labels = kmeans.labels_
+
+            #for c in range(N_CLUSTERS):
+            #    ax1.plot(self.time_grid, kmeans.cluster_centers_[c], label='Cluster center: ' + str(c))
+
+            for c in range(N_CLUSTERS):
+                ax1 = plt.subplot2grid((N_CLUSTERS,2), (c, trialTypeIdx))
+
+                found_labels = np.nonzero( labels == c )
+
+                cur_labeled_data = data[found_labels,:]
+                mean_cur_labeled_data = np.mean(cur_labeled_data,0)
+
+                cur_labeled_data_len = cur_labeled_data.shape[0]
+                idx = 0
+                while idx < cur_labeled_data_len:
+                    ax1.plot(self.time_grid, cur_labeled_data[idx,:], color='grey')
+
+                ax1.plot(self.time_grid, mean_cur_labeled_data, label='Avg', color='k')
+                ax1.set_xlabel('Time (s)')
+                ax1.set_ylabel('Lateral vel (au/s)')
+                ax1.set_title('kmeans(' + str(N_CLUSTERS) + ') lat vel : ' + trialType)
+                ax1.set_xlim((0, 6.5))
+                ylim = (-5000, 5000)
+                ax1.set_ylim(ylim)
+                p = patches.Rectangle((self.exp_meta.preStimTime,ylim[0]), self.exp_meta.stimTime, \
+                                    ylim[1]-ylim[0], linewidth=0, color='wheat')
+
+                ax1.add_patch(p)
+
+                plt.legend(frameon=False)
 
         plt.show()
 
+        filepath = self.exp_meta.analysisPath + '/behaviour_kmeans_clustering_' \
+                   + str(N_CLUSTERS) + '_begT_' + str(BEGIN_TIME) + '_end_T_' + str(END_TIME)
 
-        """
-        print 'Processing run: { ' + str(trialTypeIdx) + ' , ' + str(trialIdx) + ' }'
-        if trialTypeIdx == 2 and trialIdx == 157:
-            plt.figure()
-        # Plot the trajectory for this trial
-        plt.plot(t_z[1:], vel_x)
-        plt.xlabel('Time (s)')
-        plt.ylabel('Lateral vel (au/s)')
-        plt.title( self.exp_meta.trialTypes[ trialTypeIdx ] + ' trialIdx: ' + str(trialIdx) )
-        plt.xlim((0, 6.5))
-        plt.show()
-                """
+        plt.savefig(filepath+'.png', bbox_inches='tight')
+        plt.savefig(filepath+'.pdf', bbox_inches='tight')
+        plt.savefig(filepath+'.eps', bbox_inches='tight', format='eps', dpi=1000)
+
 
 
