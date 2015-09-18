@@ -10,4 +10,4 @@ class osmotropotaxis_test:
         classifier = ftc.fly_trajectory_classifier(exp_mdata)
         classifier.prime( data_loader.trial_data_all )
         #classifier.plot_avg_velocity_response()
-        classifier.classify( data_loader.trial_data_all )
+        classifier.classify( data_loader.trial_data_all, 'AgglomerativeClustering' )
