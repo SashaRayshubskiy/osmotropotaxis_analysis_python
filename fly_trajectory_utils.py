@@ -12,22 +12,22 @@ class fly_trajectory_utils:
         self.trialTypeCnt = len(self.trialTypes)
 
 
-    # NOTE: Changes trial_data_all in place
-    def rotate(self, trial_data_all):
+    # NOTE: Changes trial_data in place
+    def rotate(self, trial_data):
         # This value determines how of the pre stimulus trajectory, before
         # the stimulation is turned on, to consider in the rotation
         self.PERIOD_BEFORE_STIM_ONSET = 0.5
 
-        trial_type_cnt = len(trial_data_all)
+        trial_type_cnt = len(trial_data)
 
         trialTypeIdx = 0
         while trialTypeIdx < trial_type_cnt:
-            trials_in_trial_type_cnt = len(trial_data_all[trialTypeIdx])
+            trials_in_trial_type_cnt = len(trial_data[trialTypeIdx])
             trialIdx = 0
             while trialIdx < trials_in_trial_type_cnt:
-                t = trial_data_all[trialTypeIdx][trialIdx].t
-                dx = trial_data_all[trialTypeIdx][trialIdx].dx
-                dy = trial_data_all[trialTypeIdx][trialIdx].dy
+                t = trial_data[trialTypeIdx][trialIdx].t
+                dx = trial_data[trialTypeIdx][trialIdx].dx
+                dy = trial_data[trialTypeIdx][trialIdx].dy
 
                 t_z = t - t[ 0 ]
 
@@ -37,8 +37,8 @@ class fly_trajectory_utils:
                 qual_pre_stim_t = np.nonzero((t_z > ( self.preStimTime - self.PERIOD_BEFORE_STIM_ONSET)) & (t_z < self.preStimTime))[0]
 
                 if qual_pre_stim_t.shape[0] <= 1:
-                    trial_data_all[trialTypeIdx][trialIdx].dx_rot = dx
-                    trial_data_all[trialTypeIdx][trialIdx].dy_rot = dy
+                    trial_data[trialTypeIdx][trialIdx].dx_rot = dx
+                    trial_data[trialTypeIdx][trialIdx].dy_rot = dy
                     trialIdx = trialIdx + 1
                     continue
 
@@ -55,25 +55,25 @@ class fly_trajectory_utils:
                 dy_rot = vR[:, 1]
                 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-                trial_data_all[trialTypeIdx][trialIdx].dx_rot = dx_rot
-                trial_data_all[trialTypeIdx][trialIdx].dy_rot = dy_rot
+                trial_data[trialTypeIdx][trialIdx].dx_rot = dx_rot
+                trial_data[trialTypeIdx][trialIdx].dy_rot = dy_rot
                 # print 'trialTypeIdx = ' + str(trialTypeIdx) + ' trialIdx=' + str(trialIdx)
                 trialIdx = trialIdx + 1
 
             trialTypeIdx = trialTypeIdx + 1
 
-    # NOTE: Changes trial_data_all in place
-    def calculate_velocity( self, trial_data_all ):
-        trial_type_cnt = len(trial_data_all)
+    # NOTE: Changes trial_data in place
+    def calculate_velocity( self, trial_data ):
+        trial_type_cnt = len(trial_data)
 
         trialTypeIdx = 0
         while trialTypeIdx<trial_type_cnt:
-            trials_in_trial_type_cnt = len(trial_data_all[trialTypeIdx])
+            trials_in_trial_type_cnt = len(trial_data[trialTypeIdx])
             trialIdx = 0
             while trialIdx < trials_in_trial_type_cnt:
-                t = trial_data_all[trialTypeIdx][trialIdx].t
-                dx = trial_data_all[trialTypeIdx][trialIdx].dx
-                dy = trial_data_all[trialTypeIdx][trialIdx].dy
+                t = trial_data[trialTypeIdx][trialIdx].t
+                dx = trial_data[trialTypeIdx][trialIdx].dx
+                dy = trial_data[trialTypeIdx][trialIdx].dy
 
                 t_z = t - t[ 0 ]
 
@@ -81,8 +81,31 @@ class fly_trajectory_utils:
                 vel_x = dx[1:] / t_diff
                 vel_y = dy[1:] / t_diff
 
-                trial_data_all[trialTypeIdx][trialIdx].vel_x = vel_x
-                trial_data_all[trialTypeIdx][trialIdx].vel_y = vel_y
+                trial_data[trialTypeIdx][trialIdx].vel_x = vel_x
+                trial_data[trialTypeIdx][trialIdx].vel_y = vel_y
                 trialIdx = trialIdx + 1
 
             trialTypeIdx = trialTypeIdx + 1
+
+    def filter_fwd_velocity(self, trial_data, vel_threshold):
+        trial_data_vel_filtered = []
+
+        trial_type_cnt = len(trial_data)
+
+        trialTypeIdx = 0
+        while trialTypeIdx<trial_type_cnt:
+            trials_in_trial_type_cnt = len(trial_data[ trialTypeIdx ])
+            trial_data_vel_filtered.append([])
+            trialIdx = 0
+            while trialIdx < trials_in_trial_type_cnt:
+                vel_y = trial_data[ trialTypeIdx ][ trialIdx ].vel_y
+
+                if np.mean(vel_y) > vel_threshold:
+                    trial_data_vel_filtered[ trialTypeIdx ].append(trial_data[ trialTypeIdx ][ trialIdx ])
+
+                trialIdx = trialIdx + 1
+
+            trialTypeIdx = trialTypeIdx + 1
+
+        return trial_data_vel_filtered
+        

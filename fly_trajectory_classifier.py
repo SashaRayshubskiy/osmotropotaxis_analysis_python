@@ -44,6 +44,7 @@ class fly_trajectory_classifier:
 
             # Trying kmeans
             myTrialIdx = TrialData.TrialData.getTrialIndexForName(trialType)
+
             data = bdata_griddy[myTrialIdx][:,BEGIN_TIME_FRAME:END_TIME_FRAME,self.griddy.VEL_X]
             data_all = bdata_griddy[myTrialIdx][:,:,self.griddy.VEL_X]
 

@@ -3,8 +3,8 @@ __author__ = 'sasha'
 import numpy as np
 
 class fly_trajectory_griddy:
-    def __init__(self, exp_meta, trial_data_all):
-        self.trial_data_all = trial_data_all
+    def __init__(self, exp_meta, trial_data):
+        self.trial_data = trial_data
         self.exp_meta = exp_meta
         self.T            = 0
         self.DX           = 1
@@ -29,11 +29,11 @@ class fly_trajectory_griddy:
     def griddify(self):
 
         self.bdata_griddy = []
-        trial_type_cnt = len(self.trial_data_all)
+        trial_type_cnt = len(self.trial_data)
 
         trialTypeIdx = 0
         while trialTypeIdx<trial_type_cnt:
-            trials_in_trial_type_cnt = len(self.trial_data_all[trialTypeIdx])
+            trials_in_trial_type_cnt = len(self.trial_data[trialTypeIdx])
             trialIdx = 0
 
             # { trial, time point, [t,dx,dy,vel_x, vel_y] }
@@ -43,11 +43,11 @@ class fly_trajectory_griddy:
             self.bdata_griddy.append( cur_trial_type_grid_data )
 
             while trialIdx < trials_in_trial_type_cnt:
-                t = self.trial_data_all[trialTypeIdx][trialIdx].t
-                dx_rot = self.trial_data_all[trialTypeIdx][trialIdx].dx_rot
-                dy_rot = self.trial_data_all[trialTypeIdx][trialIdx].dy_rot
-                vel_x = self.trial_data_all[trialTypeIdx][trialIdx].vel_x
-                vel_y = self.trial_data_all[trialTypeIdx][trialIdx].vel_y
+                t = self.trial_data[trialTypeIdx][trialIdx].t
+                dx_rot = self.trial_data[trialTypeIdx][trialIdx].dx_rot
+                dy_rot = self.trial_data[trialTypeIdx][trialIdx].dy_rot
+                vel_x = self.trial_data[trialTypeIdx][trialIdx].vel_x
+                vel_y = self.trial_data[trialTypeIdx][trialIdx].vel_y
 
                 t_z = t - t[ 0 ]
 

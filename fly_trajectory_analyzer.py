@@ -17,7 +17,11 @@ class fly_trajectory_analyzer:
         self.fly_traj_utils.rotate( self.trial_data_all )
         self.fly_traj_utils.calculate_velocity( self.trial_data_all )
 
-        self.griddy = ftg.fly_trajectory_griddy(exp_meta, trial_data_all)
+
+        self.FWD_VELOCITY_THRESHOLD = 500
+        self.trial_data_vel_filtered = self.fly_traj_utils.filter_fwd_velocity(self.trial_data_all, self.FWD_VELOCITY_THRESHOLD)
+
+        self.griddy = ftg.fly_trajectory_griddy(exp_meta, self.trial_data_vel_filtered)
         self.classifier = ftc.fly_trajectory_classifier(self.exp_meta, self.griddy)
 
     def show_classifier(self, type):
@@ -59,7 +63,7 @@ class fly_trajectory_analyzer:
         ax1.set_ylabel('Lateral vel (au/s)')
         ax1.set_title( 'Avg lat vel all trials ' )
         ax1.set_xlim((0, 6.5))
-        ylim = (-400, 800)
+        ylim = (-700, 1100)
         ax1.set_ylim(ylim)
         ax1.grid()
 
