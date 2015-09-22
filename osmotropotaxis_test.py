@@ -10,7 +10,6 @@ class osmotropotaxis_test:
     def run(self, data_loader, exp_mdata):
 
         fly_traj_analyzer = fta.fly_trajectory_analyzer(exp_mdata, data_loader.trial_data_all)
-
         fly_traj_analyzer.show_classifier('AgglomerativeClustering')
 
 

@@ -21,20 +21,16 @@ class fly_trajectory_classifier:
         self.stimTime     = exp_meta.stimTime
         self.trialTypes   = exp_meta.trialTypes
         self.trialTypeCnt = len(self.trialTypes)
-        self.T            = 0
-        self.DX           = 1
-        self.DY           = 2
-        self.VEL_X        = 3
-        self.VEL_Y        = 4
         self.bdata_griddy = bdata_griddy
+        self.fly_traj_utils = ftu.fly_trajectory_utils(self.exp_meta)
 
     def classify(self, clusterType):
 
         BEGIN_TIME = 2.9
         END_TIME = 4.5
 
-        BEGIN_TIME_FRAME = BEGIN_TIME*self.TIME_GRID_SPACING
-        END_TIME_FRAME = END_TIME*self.TIME_GRID_SPACING
+        BEGIN_TIME_FRAME = BEGIN_TIME*self.fly_traj_utils.TIME_GRID_SPACING
+        END_TIME_FRAME = END_TIME*self.fly_traj_utils.TIME_GRID_SPACING
 
         trialT = ['Left_Odor', 'Right_Odor']
 
@@ -46,8 +42,8 @@ class fly_trajectory_classifier:
 
             # Trying kmeans
             myTrialIdx = TrialData.TrialData.getTrialIndexForName(trialType)
-            data = self.bdata_griddy[myTrialIdx][:,BEGIN_TIME_FRAME:END_TIME_FRAME,self.VEL_X]
-            data_all = self.bdata_griddy[myTrialIdx][:,:,self.VEL_X]
+            data = self.bdata_griddy[myTrialIdx][:,BEGIN_TIME_FRAME:END_TIME_FRAME,self.fly_traj_utils.VEL_X]
+            data_all = self.bdata_griddy[myTrialIdx][:,:,self.fly_traj_utils.VEL_X]
 
             if clusterType == 'kmeans':
                 N_CLUSTERS = 5

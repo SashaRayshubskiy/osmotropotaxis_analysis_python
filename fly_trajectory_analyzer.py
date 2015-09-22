@@ -5,6 +5,7 @@ import matplotlib.patches as patches
 import numpy as np
 import fly_trajectory_utils as ftu
 import fly_trajectory_classifier as ftc
+import fly_trajectory_griddy as ftg
 
 import TrialData
 
@@ -15,13 +16,16 @@ class fly_trajectory_analyzer:
         self.fly_traj_utils = ftu.fly_trajectory_utils( self.exp_meta)
         self.fly_traj_utils.rotate( self.trial_data_all )
         self.fly_traj_utils.calculate_velocity( self.trial_data_all )
-        self.bdata_griddy = self.fly_traj_utils.griddify( self.trial_data_all )
-        self.classifier = ftc.fly_trajectory_classifier(self.exp_meta, self.bdata_griddy)
+
+        self.griddy = ftg.fly_trajectory_griddy(exp_meta, trial_data_all)
+        self.classifier = ftc.fly_trajectory_classifier(self.exp_meta, self.griddy)
 
     def show_classifier(self, type):
         self.classifier.classify(type)
 
     def show_avg_velocity_response(self):
+
+        bdata_griddy = self.griddy.get_data()
 
         fig = plt.figure(figsize=(14, 6.7), dpi=100, facecolor='w', edgecolor='k')
 
@@ -29,10 +33,10 @@ class fly_trajectory_analyzer:
         rightTrialIdx = TrialData.TrialData.getTrialIndexForName('Right_Odor')
 
         ax1 = fig.add_subplot(1,2,1)
-        mean_of_trials_fwd_left = np.mean(self.bdata_griddy[leftTrialIdx][:,:,self.VEL_Y],0)
-        mean_of_trials_fwd_right = np.mean(self.bdata_griddy[rightTrialIdx][:,:,self.VEL_Y],0)
-        ax1.plot( self.time_grid, mean_of_trials_fwd_left, color='r', label='Left Odor' )
-        ax1.plot( self.time_grid, mean_of_trials_fwd_right, color='b', label='Right Odor' )
+        mean_of_trials_fwd_left = np.mean( bdata_griddy[leftTrialIdx][:,:,self.griddy.VEL_Y],0)
+        mean_of_trials_fwd_right = np.mean( bdata_griddy[rightTrialIdx][:,:,self.griddy.VEL_Y],0)
+        ax1.plot( self.griddy.get_time_grid(), mean_of_trials_fwd_left, color='r', label='Left Odor' )
+        ax1.plot( self.griddy.get_time_grid(), mean_of_trials_fwd_right, color='b', label='Right Odor' )
         ax1.set_xlabel('Time (s)')
         ax1.set_ylabel('Fwd vel (au/s)')
         ax1.set_title( 'Avg fwd vel all trials' )
@@ -47,10 +51,10 @@ class fly_trajectory_analyzer:
         ax1.add_patch(p)
 
         ax1 = fig.add_subplot(1,2,2)
-        mean_of_trials_lat_left = np.mean(self.bdata_griddy[leftTrialIdx][:,:,self.VEL_X],0)
-        mean_of_trials_lat_right = np.mean(self.bdata_griddy[rightTrialIdx][:,:,self.VEL_X],0)
-        ax1.plot( self.time_grid, mean_of_trials_lat_left, color='r', label='Left Odor' )
-        ax1.plot( self.time_grid, mean_of_trials_lat_right, color='b', label='Right Odor' )
+        mean_of_trials_lat_left = np.mean(bdata_griddy[leftTrialIdx][:,:,self.griddy.VEL_X],0)
+        mean_of_trials_lat_right = np.mean(bdata_griddy[rightTrialIdx][:,:,self.griddy.VEL_X],0)
+        ax1.plot( self.griddy.get_time_grid(), mean_of_trials_lat_left, color='r', label='Left Odor' )
+        ax1.plot( self.griddy.get_time_grid(), mean_of_trials_lat_right, color='b', label='Right Odor' )
         ax1.set_xlabel('Time (s)')
         ax1.set_ylabel('Lateral vel (au/s)')
         ax1.set_title( 'Avg lat vel all trials ' )
