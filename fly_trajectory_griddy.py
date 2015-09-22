@@ -18,6 +18,7 @@ class fly_trajectory_griddy:
         self.time_grid = np.arange( 0, self.TIME_GRID_SIZE, 1.0/self.TIME_GRID_SPACING )
 
         self.bdata_griddy = None
+        self.griddify()
 
     def get_time_grid(self):
         return self.time_grid

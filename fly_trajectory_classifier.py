@@ -15,13 +15,13 @@ from sklearn.cluster import AgglomerativeClustering
 from scipy.io import savemat
 
 class fly_trajectory_classifier:
-    def __init__(self, exp_meta, bdata_griddy):
+    def __init__(self, exp_meta, griddy):
         self.exp_meta = exp_meta
         self.preStimTime  = exp_meta.preStimTime
         self.stimTime     = exp_meta.stimTime
         self.trialTypes   = exp_meta.trialTypes
         self.trialTypeCnt = len(self.trialTypes)
-        self.bdata_griddy = bdata_griddy
+        self.griddy = griddy
         self.fly_traj_utils = ftu.fly_trajectory_utils(self.exp_meta)
 
     def classify(self, clusterType):
@@ -29,10 +29,12 @@ class fly_trajectory_classifier:
         BEGIN_TIME = 2.9
         END_TIME = 4.5
 
-        BEGIN_TIME_FRAME = BEGIN_TIME*self.fly_traj_utils.TIME_GRID_SPACING
-        END_TIME_FRAME = END_TIME*self.fly_traj_utils.TIME_GRID_SPACING
+        BEGIN_TIME_FRAME = BEGIN_TIME*self.griddy.TIME_GRID_SPACING
+        END_TIME_FRAME = END_TIME*self.griddy.TIME_GRID_SPACING
 
         trialT = ['Left_Odor', 'Right_Odor']
+
+        bdata_griddy = self.griddy.get_data()
 
         first_pass = True
 
@@ -42,8 +44,8 @@ class fly_trajectory_classifier:
 
             # Trying kmeans
             myTrialIdx = TrialData.TrialData.getTrialIndexForName(trialType)
-            data = self.bdata_griddy[myTrialIdx][:,BEGIN_TIME_FRAME:END_TIME_FRAME,self.fly_traj_utils.VEL_X]
-            data_all = self.bdata_griddy[myTrialIdx][:,:,self.fly_traj_utils.VEL_X]
+            data = bdata_griddy[myTrialIdx][:,BEGIN_TIME_FRAME:END_TIME_FRAME,self.griddy.VEL_X]
+            data_all = bdata_griddy[myTrialIdx][:,:,self.griddy.VEL_X]
 
             if clusterType == 'kmeans':
                 N_CLUSTERS = 5
@@ -95,10 +97,10 @@ class fly_trajectory_classifier:
                 cur_labeled_data_len = cur_labeled_data.shape[0]
                 idx = 0
                 while idx < cur_labeled_data_len:
-                    ax1.plot(self.time_grid, cur_labeled_data[idx,:], color='grey')
+                    ax1.plot(self.griddy.get_time_grid(), cur_labeled_data[idx,:], color='grey')
                     idx = idx + 1
 
-                ax1.plot(self.time_grid, mean_cur_labeled_data, label='cluster: ' + str(c) + ' [' + str(cur_labeled_data_len) + ']', color='k')
+                ax1.plot(self.griddy.get_time_grid(), mean_cur_labeled_data, label='cluster: ' + str(c) + ' [' + str(cur_labeled_data_len) + ']', color='k')
 
                 if c == N_CLUSTERS-1:
                     ax1.set_xlabel('Time (s)', labelpad=2)
