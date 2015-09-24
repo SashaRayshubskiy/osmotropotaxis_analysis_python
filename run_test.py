@@ -22,3 +22,9 @@ fly_traj_analyzer.show_fwd_and_lat_velocity_bar_plots_for_each_trial()
 
 #
 fly_traj_analyzer.show_trajectories()
+
+#
+fly_traj_analyzer.show_PCA_analysis()
+
+#
+fly_traj_analyzer.show_PCA_2D_scatter_analysis()

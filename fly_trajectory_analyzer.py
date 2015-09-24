@@ -6,6 +6,9 @@ import numpy as np
 import fly_trajectory_utils as ftu
 import fly_trajectory_classifier as ftc
 import fly_trajectory_griddy as ftg
+from mpl_toolkits.mplot3d import Axes3D
+
+from sklearn.decomposition import PCA
 
 import TrialData
 
@@ -27,18 +30,118 @@ class fly_trajectory_analyzer:
     def show_classifier(self, type, N_CLUSTERS):
         self.classifier.classify(type, N_CLUSTERS)
 
+    def show_PCA_2D_scatter_analysis(self):
+        bdata_griddy = self.griddy.get_data()
+        BEGIN_TIME = 2.9
+        END_TIME = 4.5
+
+        BEGIN_TIME_FRAME = BEGIN_TIME*self.griddy.TIME_GRID_SPACING
+        END_TIME_FRAME = END_TIME*self.griddy.TIME_GRID_SPACING
+
+
+        fig = plt.figure(figsize=(14, 6.7), dpi=100, facecolor='w', edgecolor='k')
+
+        lagend_helper = {}
+        plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+        plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+
+        for trialListIdx, trialList in enumerate(self.trial_data_vel_filtered):
+            cur_data = bdata_griddy[trialListIdx]
+            X = cur_data[:,BEGIN_TIME_FRAME:END_TIME_FRAME,self.griddy.VEL_X]
+            print X.shape
+            N_COMPONENTS = 4
+            pca = PCA(n_components=N_COMPONENTS)
+            pca.fit(X)
+            X_tran = pca.transform(X)
+
+            trialName = TrialData.TrialData.getTrialNameForIdx(trialListIdx)
+
+            axs = fig.add_subplot(1,3,trialListIdx+1, projection='3d')
+            axs.scatter(X_tran[:,0], X_tran[:,1], X_tran[:,2] )
+            axs.set_xlabel('PC1')
+            axs.set_ylabel('PC2')
+            axs.set_zlabel('PC3')
+            axs.set_title(trialName)
+
+        plt.show()
+        filepath = self.exp_meta.analysisPath + '/behavior_3D_scatter_PCA'
+        plt.savefig(filepath+'.png', bbox_inches='tight')
+        plt.savefig(filepath+'.pdf', bbox_inches='tight')
+        plt.savefig(filepath+'.eps', bbox_inches='tight', format='eps', dpi=1000)
+
+
+
+    def show_PCA_analysis(self):
+
+        bdata_griddy = self.griddy.get_data()
+        BEGIN_TIME = 2.9
+        END_TIME = 4.5
+
+        BEGIN_TIME_FRAME = BEGIN_TIME*self.griddy.TIME_GRID_SPACING
+        END_TIME_FRAME = END_TIME*self.griddy.TIME_GRID_SPACING
+
+        N_COMPONENTS = 4
+        pca = PCA(n_components=N_COMPONENTS)
+
+        fig, axs = plt.subplots(N_COMPONENTS, 3, sharex=True, sharey=True, figsize=(14, 6.7), dpi=100, facecolor='w', edgecolor='k')
+
+        lagend_helper = {}
+
+        for trialListIdx, trialList in enumerate(self.trial_data_vel_filtered):
+            cur_data = bdata_griddy[trialListIdx]
+            X = cur_data[:,BEGIN_TIME_FRAME:END_TIME_FRAME,self.griddy.VEL_X]
+            print X.shape
+            pca.fit(X)
+            components = pca.components_
+
+            trialName = TrialData.TrialData.getTrialNameForIdx(trialListIdx)
+
+            i=0
+            while i < N_COMPONENTS:
+                lagend_helper[i] = axs[ i, trialListIdx ].plot( self.griddy.get_time_grid()[BEGIN_TIME_FRAME:END_TIME_FRAME], components[i], label='Component ' + str(i) )
+
+                if i == N_COMPONENTS-1:
+                    axs[ i, trialListIdx ].set_xlabel('Time (s)')
+
+                if trialListIdx == len(self.trial_data_vel_filtered):
+                    axs[ i, trialListIdx ].set_ylabel('Lat Vel (au)')
+
+                if i == 0:
+                    axs[ i, trialListIdx ].set_title(trialName + ' component ' + str(i))
+                else:
+                    axs[ i, trialListIdx ].set_title('Component ' + str(i))
+
+                ylim = (-0.5, 0.5)
+                axs[ i, trialListIdx ].set_ylim(ylim)
+                axs[ i, trialListIdx ].set_xlim((BEGIN_TIME, END_TIME))
+
+                p = patches.Rectangle((self.exp_meta.preStimTime,ylim[0]), self.exp_meta.stimTime, \
+                                ylim[1]-ylim[0], linewidth=0, color='wheat' )
+                axs[ i, trialListIdx ].add_patch(p)
+                i = i + 1
+
+
+        plt.show()
+        filepath = self.exp_meta.analysisPath + '/behavior_PCA'
+        plt.savefig(filepath+'.png', bbox_inches='tight')
+        plt.savefig(filepath+'.pdf', bbox_inches='tight')
+        plt.savefig(filepath+'.eps', bbox_inches='tight', format='eps', dpi=1000)
+
+
     def show_trajectories(self):
 
         N_CLUSTERS = 4
         fig, axs = plt.subplots(1, 3, sharey=True, figsize=(14, 6.7), dpi=100, facecolor='w', edgecolor='k')
 
+        # Clustering epoch
+        BEGIN_TIME = 2.9
+        END_TIME = 4.5
+
+        bdata_griddy = self.griddy.get_data()
+
+
         # Only show velocity filtered data
-
         for trialListIdx, trialList in enumerate(self.trial_data_vel_filtered):
-
-            BEGIN_TIME = 2.9
-            END_TIME = 4.5
-            bdata_griddy = self.griddy.get_data()
 
             # This is for fly_health_94, Both_Odor, Left_Odor, Right_Odor
             correct_labels = [ 0, 1, 0 ]
@@ -78,13 +181,13 @@ class fly_trajectory_analyzer:
             axs[trialListIdx].set_title(title_str)
             axs[trialListIdx].set_ylabel('Y distance (au)')
             axs[trialListIdx].set_xlabel('X distance (au)')
-            axs[trialListIdx].set_ylim((-1000,10000))
+            axs[trialListIdx].set_ylim((-1000,8000))
             axs[trialListIdx].set_xlim((-4000,8000))
             # axs[trialListIdx].set_xticklabels(axs[trialListIdx].get_xticklabels(), rotation=45)
             axs[trialListIdx].grid()
 
             if trialListIdx == 0:
-                axs[trialListIdx].legend((plot_helper.keys()), frameon=False)
+                axs[trialListIdx].legend( plot_helper.itervalues(), plot_helper.iterkeys(), frameon=False)
 
         plt.show()
         filepath = self.exp_meta.analysisPath + '/trajectory_all_runs'

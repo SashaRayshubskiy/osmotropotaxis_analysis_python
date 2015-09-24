@@ -38,7 +38,7 @@ class fly_trajectory_griddy:
 
             # { trial, time point, [t,dx,dy,vel_x, vel_y] }
             # Time points that are not occupied get assigned [t, 0, 0]
-            cur_trial_type_grid_data = np.empty( (trials_in_trial_type_cnt, self.time_grid.shape[0], 5) )
+            cur_trial_type_grid_data = np.zeros( (trials_in_trial_type_cnt, self.time_grid.shape[0], 5) )
 
             self.bdata_griddy.append( cur_trial_type_grid_data )
 
