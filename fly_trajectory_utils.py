@@ -11,12 +11,14 @@ class fly_trajectory_utils:
         self.trialTypes   = exp_meta.trialTypes
         self.trialTypeCnt = len(self.trialTypes)
 
+    def calculate_trial_trajectory(self, dx, dy):
+        return (np.cumsum(dx), np.cumsum(dy))
 
     # NOTE: Changes trial_data in place
     def rotate(self, trial_data):
         # This value determines how of the pre stimulus trajectory, before
         # the stimulation is turned on, to consider in the rotation
-        self.PERIOD_BEFORE_STIM_ONSET = 0.5
+        self.PERIOD_BEFORE_STIM_ONSET = self.preStimTime
 
         trial_type_cnt = len(trial_data)
 
@@ -72,8 +74,8 @@ class fly_trajectory_utils:
             trialIdx = 0
             while trialIdx < trials_in_trial_type_cnt:
                 t = trial_data[trialTypeIdx][trialIdx].t
-                dx = trial_data[trialTypeIdx][trialIdx].dx
-                dy = trial_data[trialTypeIdx][trialIdx].dy
+                dx = trial_data[trialTypeIdx][trialIdx].dx_rot
+                dy = trial_data[trialTypeIdx][trialIdx].dy_rot
 
                 t_z = t - t[ 0 ]
 
@@ -87,7 +89,7 @@ class fly_trajectory_utils:
 
             trialTypeIdx = trialTypeIdx + 1
 
-    def filter_fwd_velocity(self, trial_data, vel_threshold):
+    def filter_fwd_velocity(self, trial_data, vel_threshold, preStimT, stimT):
         trial_data_vel_filtered = []
 
         trial_type_cnt = len(trial_data)
@@ -98,10 +100,18 @@ class fly_trajectory_utils:
             trial_data_vel_filtered.append([])
             trialIdx = 0
             while trialIdx < trials_in_trial_type_cnt:
+
+                t = trial_data[ trialTypeIdx ][ trialIdx ].t
+                tz = t-t[0]
+
+                pre_stim_t = np.nonzero( tz < preStimT )
+                stim_t = np.nonzero((tz >= preStimT) & (tz < (preStimT+stimT)))
+
                 vel_y = trial_data[ trialTypeIdx ][ trialIdx ].vel_y
 
-                if np.mean(vel_y) > vel_threshold:
+                if np.mean(vel_y[pre_stim_t]) > vel_threshold and stim_t[0].shape[0] > 0:
                     trial_data_vel_filtered[ trialTypeIdx ].append(trial_data[ trialTypeIdx ][ trialIdx ])
+                    #print 'Accepted trial (' + str(trialTypeIdx) + ',' + str(trialIdx) + ')'
 
                 trialIdx = trialIdx + 1
 

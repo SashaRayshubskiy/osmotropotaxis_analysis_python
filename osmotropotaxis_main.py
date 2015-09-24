@@ -21,7 +21,7 @@ class osmotropotaxis_main:
         self.loader.load_behavioral_data()
 
         # Load calcium imaging data
-        self.loader.load_calcium_imaging_data()
+        #self.loader.load_calcium_imaging_data()
 
     def run(self):
         # Load in behavioral and calcium imaging data

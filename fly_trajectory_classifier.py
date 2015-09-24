@@ -24,15 +24,45 @@ class fly_trajectory_classifier:
         self.griddy = griddy
         self.fly_traj_utils = ftu.fly_trajectory_utils(self.exp_meta)
 
-    def classify(self, clusterType):
+    def classify_core(self, clusterType, data_for_trial_type, begin_time, end_time):
 
+        BEGIN_TIME_FRAME = begin_time*self.griddy.TIME_GRID_SPACING
+        END_TIME_FRAME = end_time*self.griddy.TIME_GRID_SPACING
+
+        data = data_for_trial_type[:,BEGIN_TIME_FRAME:END_TIME_FRAME,self.griddy.VEL_X]
+
+        labels = None
+        N_CLUSTERS = None
+        if clusterType == 'kmeans':
+            N_CLUSTERS = 5
+            kmeans = KMeans(n_clusters=N_CLUSTERS)
+            kmeans.fit(data)
+            labels = kmeans.labels_
+        elif clusterType == 'affinity_propagation':
+            ap = AffinityPropagation(damping=0.75)
+            ap.fit(data)
+            labels = ap.labels_
+            N_CLUSTERS = np.max(self.labels)+1
+        elif clusterType == 'DBSCAN':
+            dbscan = DBSCAN()
+            dbscan.fit(data)
+            labels = dbscan.labels_
+            N_CLUSTERS = np.max(labels)+1
+            print 'N_CLUSTERS=' + str(N_CLUSTERS)
+        elif clusterType == 'AgglomerativeClustering':
+            N_CLUSTERS = 2
+            ac = AgglomerativeClustering(n_clusters=N_CLUSTERS)
+            ac.fit(data)
+            labels = ac.labels_
+        else:
+            print 'ERROR: clusterType: ' + clusterType + ' is not recognized'
+
+        return (labels, N_CLUSTERS)
+
+    def classify(self, clusterType):
+        trialT = ['Left_Odor', 'Right_Odor']
         BEGIN_TIME = 2.9
         END_TIME = 4.5
-
-        BEGIN_TIME_FRAME = BEGIN_TIME*self.griddy.TIME_GRID_SPACING
-        END_TIME_FRAME = END_TIME*self.griddy.TIME_GRID_SPACING
-
-        trialT = ['Left_Odor', 'Right_Odor']
 
         bdata_griddy = self.griddy.get_data()
 
@@ -42,35 +72,11 @@ class fly_trajectory_classifier:
 
         for trialTypeIdx, trialType in enumerate(trialT):
 
-            # Trying kmeans
             myTrialIdx = TrialData.TrialData.getTrialIndexForName(trialType)
 
-            data = bdata_griddy[myTrialIdx][:,BEGIN_TIME_FRAME:END_TIME_FRAME,self.griddy.VEL_X]
-            data_all = bdata_griddy[myTrialIdx][:,:,self.griddy.VEL_X]
+            labels, N_CLUSTERS = self.classify_core(clusterType, bdata_griddy[myTrialIdx], BEGIN_TIME, END_TIME)
 
-            if clusterType == 'kmeans':
-                N_CLUSTERS = 5
-                kmeans = KMeans(n_clusters=N_CLUSTERS)
-                kmeans.fit(data)
-                labels = kmeans.labels_
-            elif clusterType == 'affinity_propagation':
-                ap = AffinityPropagation(damping=0.75)
-                ap.fit(data)
-                labels = ap.labels_
-                N_CLUSTERS = np.max(labels)+1
-            elif clusterType == 'DBSCAN':
-                dbscan = DBSCAN()
-                dbscan.fit(data)
-                labels = dbscan.labels_
-                N_CLUSTERS = np.max(labels)+1
-                print 'N_CLUSTERS=' + str(N_CLUSTERS)
-            elif clusterType == 'AgglomerativeClustering':
-                N_CLUSTERS = 3
-                ac = AgglomerativeClustering(n_clusters=N_CLUSTERS)
-                ac.fit(data)
-                labels = ac.labels_
-            else:
-                print 'ERROR: clusterType: ' + clusterType + ' is not recognized'
+            data_all = bdata_griddy[myTrialIdx][:,:,self.griddy.VEL_X]
 
             if trialTypeIdx == 0:
                 fig, axs = plt.subplots(N_CLUSTERS, 2, sharex=True, sharey=True, figsize=(14, 6.7), dpi=100, facecolor='w', edgecolor='k')
