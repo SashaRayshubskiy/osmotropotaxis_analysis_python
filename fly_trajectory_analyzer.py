@@ -24,10 +24,12 @@ class fly_trajectory_analyzer:
         self.griddy = ftg.fly_trajectory_griddy(exp_meta, self.trial_data_vel_filtered)
         self.classifier = ftc.fly_trajectory_classifier(self.exp_meta, self.griddy)
 
-    def show_classifier(self, type):
-        self.classifier.classify(type)
+    def show_classifier(self, type, N_CLUSTERS):
+        self.classifier.classify(type, N_CLUSTERS)
 
     def show_trajectories(self):
+
+        N_CLUSTERS = 4
         fig, axs = plt.subplots(1, 3, sharey=True, figsize=(14, 6.7), dpi=100, facecolor='w', edgecolor='k')
 
         # Only show velocity filtered data
@@ -41,7 +43,7 @@ class fly_trajectory_analyzer:
             # This is for fly_health_94, Both_Odor, Left_Odor, Right_Odor
             correct_labels = [ 0, 1, 0 ]
 
-            labels, n_clusters = self.classifier.classify_core('AgglomerativeClustering', bdata_griddy[trialListIdx], BEGIN_TIME, END_TIME )
+            labels, n_clusters = self.classifier.classify_core(N_CLUSTERS, 'AgglomerativeClustering', bdata_griddy[trialListIdx], BEGIN_TIME, END_TIME )
 
             plot_helper = {}
             for trialIdx, trial in enumerate(trialList):
@@ -57,16 +59,14 @@ class fly_trajectory_analyzer:
 
                 cur_clr = None
                 trial_label = None
-                if labels[trialIdx] == correct_labels[trialListIdx]:
-                    cur_clr = 'saddlebrown'
-                    trial_label = 'correct'
-                else:
-                    cur_clr = 'sandybrown'
-                    trial_label = 'error'
 
-                plot_helper[trial_label], = axs[trialListIdx].plot(traj_x-traj_x[stim_t][0], traj_y-traj_y[stim_t][0], color=cur_clr, label=trial_label)
+                cur_clr = plt.cm.jet(1.0*labels[trialIdx]/N_CLUSTERS)
+                trial_label = 'clust: ' + str(labels[trialIdx])
+                cur_x_offset = labels[trialIdx]*2000
+
+                plot_helper[trial_label], = axs[trialListIdx].plot(traj_x-traj_x[stim_t][0]+cur_x_offset, traj_y-traj_y[stim_t][0], color=cur_clr, label=trial_label)
                 axs[trialListIdx].hold(True)
-                axs[trialListIdx].plot(traj_x[stim_t]-traj_x[stim_t][0], traj_y[stim_t]-traj_y[stim_t][0], marker='x', color=cur_clr)
+                axs[trialListIdx].plot(traj_x[stim_t]-traj_x[stim_t][0]+cur_x_offset, traj_y[stim_t]-traj_y[stim_t][0], marker='x', color=cur_clr)
 
             trialName = TrialData.TrialData.getTrialNameForIdx(trialListIdx)
 
@@ -79,10 +79,12 @@ class fly_trajectory_analyzer:
             axs[trialListIdx].set_ylabel('Y distance (au)')
             axs[trialListIdx].set_xlabel('X distance (au)')
             axs[trialListIdx].set_ylim((-1000,10000))
-            axs[trialListIdx].set_xlim((-2000,2000))
+            axs[trialListIdx].set_xlim((-4000,8000))
+            # axs[trialListIdx].set_xticklabels(axs[trialListIdx].get_xticklabels(), rotation=45)
+            axs[trialListIdx].grid()
 
             if trialListIdx == 0:
-                axs[trialListIdx].legend((plot_helper['correct'], plot_helper['error']),('Correct', 'Error'), frameon=False)
+                axs[trialListIdx].legend((plot_helper.keys()), frameon=False)
 
         plt.show()
         filepath = self.exp_meta.analysisPath + '/trajectory_all_runs'

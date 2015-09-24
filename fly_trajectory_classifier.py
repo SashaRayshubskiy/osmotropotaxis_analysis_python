@@ -24,7 +24,7 @@ class fly_trajectory_classifier:
         self.griddy = griddy
         self.fly_traj_utils = ftu.fly_trajectory_utils(self.exp_meta)
 
-    def classify_core(self, clusterType, data_for_trial_type, begin_time, end_time):
+    def classify_core(self, N_CLUSTERS, clusterType, data_for_trial_type, begin_time, end_time):
 
         BEGIN_TIME_FRAME = begin_time*self.griddy.TIME_GRID_SPACING
         END_TIME_FRAME = end_time*self.griddy.TIME_GRID_SPACING
@@ -32,9 +32,7 @@ class fly_trajectory_classifier:
         data = data_for_trial_type[:,BEGIN_TIME_FRAME:END_TIME_FRAME,self.griddy.VEL_X]
 
         labels = None
-        N_CLUSTERS = None
         if clusterType == 'kmeans':
-            N_CLUSTERS = 5
             kmeans = KMeans(n_clusters=N_CLUSTERS)
             kmeans.fit(data)
             labels = kmeans.labels_
@@ -50,7 +48,6 @@ class fly_trajectory_classifier:
             N_CLUSTERS = np.max(labels)+1
             print 'N_CLUSTERS=' + str(N_CLUSTERS)
         elif clusterType == 'AgglomerativeClustering':
-            N_CLUSTERS = 2
             ac = AgglomerativeClustering(n_clusters=N_CLUSTERS)
             ac.fit(data)
             labels = ac.labels_
@@ -59,7 +56,7 @@ class fly_trajectory_classifier:
 
         return (labels, N_CLUSTERS)
 
-    def classify(self, clusterType):
+    def classify(self, clusterType, N_CLUSTERS):
         trialT = ['Left_Odor', 'Right_Odor']
         BEGIN_TIME = 2.9
         END_TIME = 4.5
@@ -74,7 +71,7 @@ class fly_trajectory_classifier:
 
             myTrialIdx = TrialData.TrialData.getTrialIndexForName(trialType)
 
-            labels, N_CLUSTERS = self.classify_core(clusterType, bdata_griddy[myTrialIdx], BEGIN_TIME, END_TIME)
+            labels, N_CLUSTERS = self.classify_core(N_CLUSTERS, clusterType, bdata_griddy[myTrialIdx], BEGIN_TIME, END_TIME)
 
             data_all = bdata_griddy[myTrialIdx][:,:,self.griddy.VEL_X]
 
